@@ -62,13 +62,13 @@ func TestCafeCount(t *testing.T) {
 		{0, 0}, 
 		{1, 1},  
 		{2, 2}, 
-		{100, len(cafeList["moscow"])}, 
+		{100, len(cafeList[city])}, 
 	}
 
 	for _, v := range requests {
 		url := fmt.Sprintf("/cafe?count=%d&city=%s", v.count, city)
-		response := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", url, nil)
+		response := httptest.NewRecorder()
 
 		handler.ServeHTTP(response, req)
 
@@ -101,9 +101,9 @@ func TestCafeSearch(t *testing.T) {
         {"вилка", 1},      
     }
 
-    for _, tc := range testCases {
-        t.Run(fmt.Sprintf("search=%s", tc.searchQuery), func(t *testing.T) {
-            url := fmt.Sprintf("/cafe?city=%s&search=%s", city, tc.searchQuery)
+    for _, v := range testCases {
+        t.Run(fmt.Sprintf("search=%s", v.searchQuery), func(t *testing.T) {
+            url := fmt.Sprintf("/cafe?city=%s&search=%s", city, v.searchQuery)
             req := httptest.NewRequest("GET", url, nil)
             response := httptest.NewRecorder()
 
@@ -112,21 +112,20 @@ func TestCafeSearch(t *testing.T) {
             require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
 			responseBody := strings.TrimSpace(response.Body.String())
 
-
-			if tc.searchQuery == "фасоль" {
+			if v.searchQuery == "фасоль" {
             assert.Empty(t, responseBody, "if search=фасоль response should be empty")
             return
         	}
 			
 			cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
 
-            assert.GreaterOrEqual(t, len(cafes), tc.minExpected, 
-                "should return at least %d cafes", tc.minExpected)
+            assert.GreaterOrEqual(t, len(cafes), v.minExpected, 
+                "should return at least %d cafes", v.minExpected)
 
             for _, cafe := range cafes {
                 cafe = strings.TrimSpace(cafe)
-                assert.True(t, strings.Contains(strings.ToLower(cafe), tc.searchQuery),
-                    "cafe '%s' should contain '%s'", cafe, tc.searchQuery)
+                assert.True(t, strings.Contains(strings.ToLower(cafe), v.searchQuery),
+                    "cafe '%s' should contain '%s'", cafe, v.searchQuery)
             }
         })
     }
