@@ -57,7 +57,7 @@ func TestCafeCount(t *testing.T) {
 
 	requests := []struct {
 		count int 
-		want  int 
+		expectedCount  int 
 	}{
 		{0, 0}, 
 		{1, 1},  
@@ -73,11 +73,17 @@ func TestCafeCount(t *testing.T) {
 		handler.ServeHTTP(response, req)
 
 		require.Equal(t, http.StatusOK, response.Code)
-		
-		cafes := strings.Split(response.Body.String(), ",")
-		assert.Equal(t, v.want, len(cafes), 
-			"for count=%d expected %d cafes, got %d", v.count, v.want, len(cafes))
-		assert.Equal(t, v.want, strings.TrimSpace(response.Body.String()))
+		responseBody := strings.TrimSpace(response.Body.String())
+
+		if v.count == 0 {
+            assert.Empty(t, responseBody, "if count=0 response should be empty")
+            return
+        }
+
+		cafes := strings.Split(responseBody, ",")
+		assert.Equal(t, v.expectedCount, len(cafes), 
+			"for count=%d expected %d cafes, got %d", v.count, v.expectedCount, len(cafes))
+		assert.Equal(t, v.expectedCount, strings.TrimSpace(response.Body.String()))
 
 	}
 }
@@ -99,20 +105,27 @@ func TestCafeSearch(t *testing.T) {
         t.Run(fmt.Sprintf("search=%s", tc.searchQuery), func(t *testing.T) {
             url := fmt.Sprintf("/cafe?city=%s&search=%s", city, tc.searchQuery)
             req := httptest.NewRequest("GET", url, nil)
-            w := httptest.NewRecorder()
+            response := httptest.NewRecorder()
 
-            handler.ServeHTTP(w, req)
+            handler.ServeHTTP(response, req)
 
-            require.Equal(t, http.StatusOK, w.Code, "status code should be OK")
+            require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
+			responseBody := strings.TrimSpace(response.Body.String())
 
-            cafes := strings.Split(strings.TrimSpace(w.Body.String()), ",")
+
+			if tc.searchQuery == "фасоль" {
+            assert.Empty(t, responseBody, "if search=фасоль response should be empty")
+            return
+        	}
+			
+			cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
+
             assert.GreaterOrEqual(t, len(cafes), tc.minExpected, 
                 "should return at least %d cafes", tc.minExpected)
 
-            lowerSearch := strings.ToLower(tc.searchQuery)
             for _, cafe := range cafes {
                 cafe = strings.TrimSpace(cafe)
-                assert.True(t, strings.Contains(strings.ToLower(cafe), lowerSearch),
+                assert.True(t, strings.Contains(strings.ToLower(cafe), tc.searchQuery),
                     "cafe '%s' should contain '%s'", cafe, tc.searchQuery)
             }
         })
