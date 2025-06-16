@@ -108,12 +108,12 @@ func TestCafeSearch(t *testing.T) {
 			handler.ServeHTTP(response, req)
 
 			require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
-			// responseBody := strings.TrimSpace(response.Body.String())
+			responseBody := strings.TrimSpace(response.Body.String())
 
-			// if v.searchQuery == "фасоль" {
-			// 	assert.Empty(t, responseBody, "if search=фасоль response should be empty")
-			// 	return
-			// }
+			if v.searchQuery == "фасоль" {
+				assert.Empty(t, responseBody, "if search=фасоль response should be empty")
+				return
+			}
 
 			cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
 
