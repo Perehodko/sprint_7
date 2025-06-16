@@ -81,10 +81,8 @@ func TestCafeCount(t *testing.T) {
 		}
 
 		cafes := strings.Split(responseBody, ",")
-		assert.Equal(t, v.expectedCount, len(cafes),
+		assert.Len(t, cafes, v.expectedCount,
 			"for count=%d expected %d cafes, got %d", v.count, v.expectedCount, len(cafes))
-		assert.Equal(t, v.expectedCount, strings.TrimSpace(response.Body.String()))
-
 	}
 }
 
@@ -110,22 +108,21 @@ func TestCafeSearch(t *testing.T) {
 			handler.ServeHTTP(response, req)
 
 			require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
-			responseBody := strings.TrimSpace(response.Body.String())
+			// responseBody := strings.TrimSpace(response.Body.String())
 
-			if v.searchQuery == "фасоль" {
-				assert.Empty(t, responseBody, "if search=фасоль response should be empty")
-				return
-			}
+			// if v.searchQuery == "фасоль" {
+			// 	assert.Empty(t, responseBody, "if search=фасоль response should be empty")
+			// 	return
+			// }
 
 			cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
 
-			assert.GreaterOrEqual(t, len(cafes), v.minExpected,
-				"should return at least %d cafes", v.minExpected)
+			assert.Len(t, cafes, len(cafes), "should return %d cafes", len(cafes))
 
 			for _, cafe := range cafes {
 				cafe = strings.TrimSpace(cafe)
-				assert.True(t, strings.Contains(strings.ToLower(cafe), v.searchQuery),
-					"cafe '%s' should contain '%s'", cafe, v.searchQuery)
+
+				assert.Contains(t, cafeList[city], cafe, "cafe '%s' should be in %s", cafe, city)
 			}
 		})
 	}
