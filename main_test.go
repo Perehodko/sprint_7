@@ -73,10 +73,9 @@ func TestCafeCount(t *testing.T) {
 		handler.ServeHTTP(response, req)
 
 		require.Equal(t, http.StatusOK, response.Code)
-		responseBody := strings.TrimSpace(response.Body.String())
 
-		body := strings.TrimSpace(response.Body.String())
-        if body == "" {
+		responseBody := strings.TrimSpace(response.Body.String())
+        if responseBody == "" {
             assert.Equal(t, 0, v.expectedCount, "for empty response, expectedCount should be 0")
             return
         }
@@ -110,8 +109,8 @@ func TestCafeSearch(t *testing.T) {
 
 			require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
 
- 			body := strings.TrimSpace(response.Body.String())
-            if body == "" {
+ 			responseBody := strings.TrimSpace(response.Body.String())
+            if responseBody == "" {
                 assert.Equal(t, 0, v.wantCount, "for empty response, wantCount should be 0")
                 return
             }
