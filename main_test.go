@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCafeNegative(t *testing.T) {
@@ -46,5 +48,80 @@ func TestCafeWhenOk(t *testing.T) {
 		handler.ServeHTTP(response, req)
 
 		assert.Equal(t, http.StatusOK, response.Code)
+	}
+}
+
+func TestCafeCount(t *testing.T) {
+	handler := http.HandlerFunc(mainHandle)
+	city := "moscow"
+
+	requests := []struct {
+		count         int
+		expectedCount int
+	}{
+		{0, 0},
+		{1, 1},
+		{2, 2},
+		{100, min(len(cafeList[city]), 100)},
+	}
+
+	for _, v := range requests {
+		url := fmt.Sprintf("/cafe?count=%d&city=%s", v.count, city)
+		req := httptest.NewRequest("GET", url, nil)
+		response := httptest.NewRecorder()
+
+		handler.ServeHTTP(response, req)
+
+		require.Equal(t, http.StatusOK, response.Code)
+
+		responseBody := strings.TrimSpace(response.Body.String())
+        if responseBody == "" {
+            assert.Equal(t, 0, v.expectedCount, "for empty response, expectedCount should be 0")
+            return
+        }
+
+		cafes := strings.Split(responseBody, ",")
+		assert.Len(t, cafes, v.expectedCount,
+			"for count=%d expected %d cafes, got %d", v.count, v.expectedCount, len(cafes))
+	}
+}
+
+func TestCafeSearch(t *testing.T) {
+	handler := http.HandlerFunc(mainHandle)
+	city := "moscow"
+
+	testCases := []struct {
+		searchQuery string
+		wantCount int
+	}{
+		{"фасоль", 0},
+		{"кофе", 2},
+		{"вилка", 1},
+	}
+
+	for _, v := range testCases {
+		t.Run(fmt.Sprintf("search=%s", v.searchQuery), func(t *testing.T) {
+			url := fmt.Sprintf("/cafe?city=%s&search=%s", city, v.searchQuery)
+			req := httptest.NewRequest("GET", url, nil)
+			response := httptest.NewRecorder()
+
+			handler.ServeHTTP(response, req)
+
+			require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
+
+ 			responseBody := strings.TrimSpace(response.Body.String())
+            if responseBody == "" {
+                assert.Equal(t, 0, v.wantCount, "for empty response, wantCount should be 0")
+                return
+            }
+
+			cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
+
+			assert.Len(t, cafes, len(cafes), "should return %d cafes", len(cafes))
+
+			for _, cafe := range cafes {
+				assert.Contains(t, strings.ToLower(cafe), strings.ToLower(v.searchQuery), "cafe '%s' should contain '%s'", cafe, v.searchQuery)
+			}
+		})
 	}
 }
