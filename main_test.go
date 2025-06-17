@@ -75,10 +75,11 @@ func TestCafeCount(t *testing.T) {
 		require.Equal(t, http.StatusOK, response.Code)
 		responseBody := strings.TrimSpace(response.Body.String())
 
-		if v.count == 0 {
-			assert.Empty(t, responseBody, "if count=0 response should be empty")
-			return
-		}
+		body := strings.TrimSpace(response.Body.String())
+        if body == "" {
+            assert.Equal(t, 0, v.expectedCount, "for empty response, expectedCount should be 0")
+            return
+        }
 
 		cafes := strings.Split(responseBody, ",")
 		assert.Len(t, cafes, v.expectedCount,
@@ -111,7 +112,7 @@ func TestCafeSearch(t *testing.T) {
 
  			body := strings.TrimSpace(response.Body.String())
             if body == "" {
-                assert.Equal(t, 0, v.wantCount, "for empty response, minExpected should be 0")
+                assert.Equal(t, 0, v.wantCount, "for empty response, wantCount should be 0")
                 return
             }
 
