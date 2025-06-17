@@ -62,7 +62,7 @@ func TestCafeCount(t *testing.T) {
 		{0, 0},
 		{1, 1},
 		{2, 2},
-		{100, len(cafeList[city])},
+		{100, min(len(cafeList[city]), 100)},
 	}
 
 	for _, v := range requests {
@@ -92,7 +92,7 @@ func TestCafeSearch(t *testing.T) {
 
 	testCases := []struct {
 		searchQuery string
-		minExpected int
+		wantCount int
 	}{
 		{"фасоль", 0},
 		{"кофе", 2},
@@ -108,21 +108,19 @@ func TestCafeSearch(t *testing.T) {
 			handler.ServeHTTP(response, req)
 
 			require.Equal(t, http.StatusOK, response.Code, "status code should be OK")
-			responseBody := strings.TrimSpace(response.Body.String())
 
-			if v.searchQuery == "фасоль" {
-				assert.Empty(t, responseBody, "if search=фасоль response should be empty")
-				return
-			}
+ 			body := strings.TrimSpace(response.Body.String())
+            if body == "" {
+                assert.Equal(t, 0, v.wantCount, "for empty response, minExpected should be 0")
+                return
+            }
 
 			cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
 
 			assert.Len(t, cafes, len(cafes), "should return %d cafes", len(cafes))
 
 			for _, cafe := range cafes {
-				cafe = strings.TrimSpace(cafe)
-
-				assert.Contains(t, cafeList[city], cafe, "cafe '%s' should be in %s", cafe, city)
+				assert.Contains(t, strings.ToLower(cafe), strings.ToLower(v.searchQuery), "cafe '%s' should contain '%s'", cafe, v.searchQuery)
 			}
 		})
 	}
